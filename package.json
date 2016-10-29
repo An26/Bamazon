@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/An26/Bamazon/issues"
   },
-  "homepage": "https://github.com/An26/Bamazon#readme"
+  "homepage": "https://github.com/An26/Bamazon#readme",
+  "dependencies": {
+    "colors": "^1.1.2"
+  }
 }

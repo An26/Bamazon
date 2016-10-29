@@ -1,123 +1,129 @@
 var inquirer = require('inquirer');
-var mysql = ('mysql');
-var color = require('color');
-var cliTable = require('cli-table');
+var colors = require('colors');
+var Table = require('cli-table');
 var mysql = require('mysql');
 var connection = mysql.createConnection({
-	host: 'localhost',
-	port: 3306,
-	user: 'root',
-	password: 'teecup26',
-	database: 'bamazon_db',
+    host: 'localhost',
+    port: 3306,
+    user: 'root',
+    password: 'teecup26',
+    database: 'bamazon_db',
 });
-	connection.connect(function(err){
-		if (err) throw err;
-		console.log('connected as id' + connection.threadId);
-	});
+connection.connect(function(err) {
+    if (err) throw err;
+    //console.log('connected as id' + connection.threadId);
+});
+
+//LEFT OFF: trying to add total sales number to department table 
+//LINE:118
 
 
-//sudo coding
 
-//display current items for sale - all of its details in a table
-// prompt user for the id of the item they would like to purchase
-// then ask how many of these items they would like to purchase
-	//---validate to make sure items wanting to purchased is sufficient values
-//4.If sufficient, update database, and tell customer how much their total is
-	//add taxes??? :D
 
-//showCurrentListings(); //how to show data and then have a prompt...
 forCustomer();
 
 
-// function showCurrentListings() {
-// 	console.log('current listings:');
-	
-// 		if(err) {
-// 			console.log(err);
-// 		}
-// 		console.log(res);
-// 	});
-// 	connection.end();
-// };
-
-
-
 function forCustomer() {
-	connection.query('SELECT * FROM products', function(err, res) {
-		console.log(res);
-		inquirer.prompt({
-			type:'input',
-			name: 'id',
-			message: 'What would you like to purchase? \nPlease provide the ID number of the item you would like to purchase...'
-			// validate: function(){
-			// 	if(type.input = true)
-			// 	console.log('check if it\'s a viable number from the list of items);
-			// 		return true;
-			// }
+    connection.query('SELECT * FROM products', function(err, res) {
+        //console.log(res);
 
-		}).then(function(res){
-				
-			//find item that corresponds with the ID number
-				connection.query('SELECT * FROM products WHERE ID =' + res.id, function(err, response) {
-					if(err) {
-						console.log(err);
-					}
-					//console.log(response);
-					var numInStock = response[0].StockQuantity;
-					console.log('your choice: ' + response[0].ProductName);
-				});
+        var table = new Table({
+            head: ['*ID #*', 'Product', 'Price', 'Department'],
+            colWidths: [6, 50, 10, 25]
+        });
 
-				//console.log(numInStock);
+        for (var i = 0; i < res.length; i++) {
+            table.push([res[i].ID, res[i].ProductName, '$' + res[i].Price, res[i].DepartmentName]);
+        }
 
-				//connection.end();
-				inquirer.prompt([{
-					name: 'num',
-					type: 'input',
-					message: 'How many items of this selection would you like?',
-					validate: function(value) {
-			            if (isNaN(value) == false) {
-			                return true;
-			            } else {
-			                return false;
-			            }
-			        }
-				}]).then(function(number) {
-					console.log('id: ' + res.id);
-					console.log('number of purchases: ' + number.num);
-
-					//finding current in stock values
-					var numInStock = res;
-					console.log(res);
-
-					// connection.query('SELECT StockQuantity FROM products WHERE ID = ' + res.id, function(err, data) {
-					// 	if(err){
-					// 		console.log(err);
-					// 	} 
-					// 	//console.log(data[0].StockQuantity); 
-					// 	var numInStock = data[0].StockQuantity;
-
-					// });
-
-					// console.log("left in stock: " + numInStock);
-
-					//console.log(numInStock);
-					//console.log(numInStock[1]);
-					//if(number.num < (find value by pulling it from database!))
+        console.log(table.toString());
 
 
-					// connection.query('UPDATE products SET StockQuantity = StockQuantity -' + number.num + ' WHERE ID = ' + res.id, function(err, res){
-					// 		if(err){
-					// 			console.log('no changes where made');
-					// 			console.log(err);
-					// 		} else {
-					// 			console.log('changes were made!');	
-					// 		}
-					// })
-				})
-		});
-	});
+        inquirer.prompt({
+            type: 'input',
+            name: 'id',
+            message: 'What would you like to purchase? \nPlease provide the ID number of the item you would like to purchase...'
+                // validate: function(){
+                // 	id number has to be within range of current db ID numbers
+                // }
+
+        }).then(function(res) {
+
+            //find item that corresponds with the ID number
+            connection.query('SELECT * FROM products WHERE ID =' + res.id, function(err, response) {
+                if (err) {
+                    console.log('im sorry, that product ID does not exist');
+                    //--------how to return back to the prompt??
+                }
+                var departmentName = response[0].DepartmentName;
+                var numInStock = response[0].StockQuantity;
+                var price = response[0].Price;
+                var itemName = response[0].ProductName;
+
+                inquirer.prompt([{
+                    name: 'itemNum',
+                    type: 'input',
+                    message: 'How many items of this selection would you like?',
+                    validate: function(value) {
+                        var tempNum = value;
+                        tempNum = tempNum.split(',').join('');
+                        if (isNaN(tempNum) == false) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    }
+                }]).then(function(number) {
+                    var newItemNum = number.itemNum;
+                    newItemNum = newItemNum.split(',').join('');
+                    if (newItemNum > numInStock) {
+                        console.log('Sorry we do not have enough items, we currently have ' + numInStock + ' in stock.');
+                        return false;
+//--------how to return to the prompt to ask the question again for right amount of items?
+                    }
+                    //updating stockQuanitity from products_db
+                    connection.query('UPDATE products SET StockQuantity = StockQuantity -' + newItemNum + ' WHERE ID = ' + res.id, function(err, response) {
+                        if (err) {
+                            console.log('there was an error with your purchase');
+                            console.log(err);
+                        }
+                            var totalPrice = Math.round((newItemNum * price) * 100) / 100;
+
+                            console.log(newItemNum + ' item(s) were placed in your cart!');
+                            console.log('Shopping Cart: \n' + itemName + '(' + newItemNum + ') x ' + '$' + price);
+                            console.log('Your total: \$' + totalPrice);
+
+                            console.log(totalPrice);
+                            console.log(departmentName);
+
+                            connection.query('UPDATE departments SET ProductSales = ProductSales + ' + totalPrice + ' WHERE DepartmentName = "Books"', function(err,res){
+                                if(err){
+                                    console.log(err);
+                                    return;
+                                }
+                                console.log('product sales was added');
+                            });
+                    });
+
+
+//AHHHH WTFFFF how can i get this to work??
+//do i have to join the tables???
+
+                    // connection.query('SELECT * FROM departments', function(err, res) {
+                    //     if (err) {
+                    //         console.log('error: ' + err);
+                    //     }
+                    //     console.log('res: ' + res);
+                    // })
+
+
+
+
+                   // connection.end();
+                });
+
+            });
+
+        });
+    });
 };
-
-
-
-
