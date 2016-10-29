@@ -24,23 +24,22 @@ function bamExecutive() {
 		choices: ['View Product Sales by Department', 'Create New Department']
 	}]).then(function(data){
 			if(data.option === "View Product Sales by Department"){
-				connection.query('SELECT * FROM departments', function(err, res){
+				connection.query('SELECT DepartmentID, DepartmentName, OverHeadCosts, OverHeadCosts-ProductSales AS "TotalProfit" FROM departments', function(err, res){
 					if(err){
 						console.log(err);
 					}
 				//console.log(res);
 
 				var table = new Table({
-					head: ['ID', 'Department', 'Overhead Costs', 'Total Sales'],
-					colWidths: [6, 25, 20, 15]
+					head: ['ID'.cyan, 'Department'.blue, 'Overhead Cost'.blue, 'Total Profit'.blue],
+					colWidths: [6, 25, 20, 20]
 				});
 
 				for (var i = 0; i < res.length; i++){
-					table.push([res[i].DepartmentID, res[i].DepartmentName, '$' + res[i].OverHeadCosts, '$' + res[i].TotalSales]);
+					table.push([res[i].DepartmentID, res[i].DepartmentName, '$' + res[i].OverHeadCosts, '$' + res[i].TotalProfit]);
 				}
 
 				console.log(table.toString());
-
 
 				connection.end();
 				})
@@ -67,6 +66,8 @@ function bamExecutive() {
 						}
 					connection.end();
 					})
+
+ 
 				})
 			}
 	});

@@ -9,9 +9,9 @@ var connection = mysql.createConnection({
 	password: 'teecup26',
 	database: 'bamazon_db',
 });
-connection.connect(function(err){
-		if (err) throw err;
-		console.log('connected as id' + connection.threadId);
+connection.connect(function(err) {
+    if (err) throw err;
+    //console.log('connected as id' + connection.threadId);
 });
 
 bamManager();
@@ -74,7 +74,19 @@ function showLowInventory() {
 		if(err) {
 			console.log(err);
 			return;
-		} console.log(res);
+		} //console.log(res);
+
+		var table = new Table({
+            head: ['ID#'.cyan, 'Product'.blue, 'Low Quantity'.magenta],
+            colWidths: [6, 50, 20]
+        });
+
+        for (var i = 0; i < res.length; i++) {
+            table.push([res[i].ID, res[i].ProductName, res[i].StockQuantity]);
+        }
+
+        console.log('\n' + table.toString());
+
 		console.log('Press any arrow key to continue or Exit');
 	});
 
@@ -88,8 +100,18 @@ function addInventory() {
 		if(err) {
 			console.log(err);
 			return;
-		} console.log(res);
-		//console.log(res[0].ProductName);
+		} //console.log(res);
+
+		var addToTable = new Table({
+				head: ['*ID*'.cyan, 'Product'.blue, 'In-Stock'.blue],
+				colWidths: [6,50,10]
+			});
+
+		for (var i = 0; i < res.length; i++) {
+			addToTable.push([res[i].ID, res[i].ProductName, res[i].StockQuantity]);
+		}
+
+		console.log('\n' + addToTable.toString());
 
 		inquirer.prompt([{
 			type: 'input',
@@ -137,20 +159,11 @@ function addInventory() {
 
 					console.log(data.addNum + ' items was added to the inventory of \"' + res[data.IDNum - 1].ProductName + '\" stock');
 
-					connection.query("SELECT ID, ProductName, StockQuantity FROM products WHERE ID = " + data.IDNum, function(err, res) {
-						if (err) {
-							console.log(err);
-						}
-						console.log(res);
-						console.log('Press any arrow key to continue or Exit');
-						bamManager();
+					console.log('Press any arrow key to continue or Exit');
+					bamManager();
 					});
 				});
-
-	});
-
-
-}
+	}
 
 function addProduct() {
 	inquirer.prompt([{
@@ -198,14 +211,31 @@ function addProduct() {
 		var newSQNum = data.stockQuantity;
 		newSQNum = newSQNum.split(',').join('');
 
-		connection.query('INSERT INTO products (ProductName, DepartmentName, Price, StockQuantity) VALUE ("' + data.productName + '", "' + data.departmentName + '", ' + newPriceNum + ', ' + newSQNum + ');');
-		console.log(data.productName + ' was successfully added to your store!');
-		connection.query('SELECT * FROM products', function(err, res){
+		connection.query('INSERT INTO products (ProductName, DepartmentName, Price, StockQuantity) VALUE ("' + data.productName + '", "' + data.departmentName + '", ' + newPriceNum + ', ' + newSQNum + ');', function(err,res){
 			if (err){
 				console.log(err);
+				return;
 			}
-			console.log(res);
-			console.log('press and arrow key to continue');
+			console.log('\n' + data.productName + ' was successfully added to your store!\n');
+
+			connection.query('SELECT * FROM products', function(err, res){
+				if (err){
+					console.log(err);
+				}
+				//console.log(res);
+				var productTable = new Table({
+					head: ['*ID*'.cyan, 'Product'.blue, 'Price'.blue, 'Department'.blue, 'In-Stock'.blue],
+					colWidths: [6,50,10,25,10]
+				});
+
+				for (var i = 0; i < res.length; i++) {
+					productTable.push([res[i].ID, res[i].ProductName, '$' + res[i].Price, res[i].DepartmentName, res[i].StockQuantity]);
+				}
+
+				console.log('\n' + productTable.toString());
+				console.log('press and arrow key to continue');
+
+			});
 		});
 		bamManager();
 	});

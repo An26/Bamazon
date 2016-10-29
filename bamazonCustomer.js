@@ -14,12 +14,6 @@ connection.connect(function(err) {
     //console.log('connected as id' + connection.threadId);
 });
 
-//LEFT OFF: trying to add total sales number to department table 
-//LINE:118
-
-
-
-
 forCustomer();
 
 
@@ -28,7 +22,7 @@ function forCustomer() {
         //console.log(res);
 
         var table = new Table({
-            head: ['*ID #*', 'Product', 'Price', 'Department'],
+            head: ['ID#'.cyan, 'Product'.blue, 'Price'.blue, 'Department'.blue],
             colWidths: [6, 50, 10, 25]
         });
 
@@ -36,7 +30,7 @@ function forCustomer() {
             table.push([res[i].ID, res[i].ProductName, '$' + res[i].Price, res[i].DepartmentName]);
         }
 
-        console.log(table.toString());
+        console.log('\n' + table.toString());
 
 
         inquirer.prompt({
@@ -47,7 +41,7 @@ function forCustomer() {
                 // 	id number has to be within range of current db ID numbers
                 // }
 
-        }).then(function(res) {
+            }).then(function(res) {
 
             //find item that corresponds with the ID number
             connection.query('SELECT * FROM products WHERE ID =' + res.id, function(err, response) {
@@ -80,50 +74,32 @@ function forCustomer() {
                         console.log('Sorry we do not have enough items, we currently have ' + numInStock + ' in stock.');
                         return false;
 //--------how to return to the prompt to ask the question again for right amount of items?
-                    }
+}
                     //updating stockQuanitity from products_db
                     connection.query('UPDATE products SET StockQuantity = StockQuantity -' + newItemNum + ' WHERE ID = ' + res.id, function(err, response) {
                         if (err) {
                             console.log('there was an error with your purchase');
                             console.log(err);
+                            return;
                         }
-                            var totalPrice = Math.round((newItemNum * price) * 100) / 100;
+                        var totalPrice = Math.round((newItemNum * price) * 100) / 100;
 
-                            console.log(newItemNum + ' item(s) were placed in your cart!');
-                            console.log('Shopping Cart: \n' + itemName + '(' + newItemNum + ') x ' + '$' + price);
-                            console.log('Your total: \$' + totalPrice);
+                        console.log(newItemNum + ' item(s) were placed in your cart!');
+                        console.log('Shopping Cart: \n' + itemName + '(' + newItemNum + ') x ' + '$' + price);
+                        console.log('Your total: \$' + totalPrice);
 
-                            console.log(totalPrice);
-                            console.log(departmentName);
-
-                            connection.query('UPDATE departments SET ProductSales = ProductSales + ' + totalPrice + ' WHERE DepartmentName = "Books"', function(err,res){
-                                if(err){
-                                    console.log(err);
-                                    return;
-                                }
-                                console.log('product sales was added');
-                            });
+                        connection.query('UPDATE departments SET ProductSales = ProductSales + ' + totalPrice + ' WHERE DepartmentName = "Books"', function(err,res){
+                            if(err){
+                                console.log(err);
+                                return;
+                            }
+                           
+                        });
                     });
-
-
-//AHHHH WTFFFF how can i get this to work??
-//do i have to join the tables???
-
-                    // connection.query('SELECT * FROM departments', function(err, res) {
-                    //     if (err) {
-                    //         console.log('error: ' + err);
-                    //     }
-                    //     console.log('res: ' + res);
-                    // })
-
-
-
-
-                   // connection.end();
-                });
+               });
 
             });
 
         });
-    });
+        });
 };
